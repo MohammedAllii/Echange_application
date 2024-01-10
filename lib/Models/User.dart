@@ -3,7 +3,7 @@ class User {
   String? last_name;
   String? email;
   String? password;
-  int? phone;
+  String? phone;
 
   User({  this.name,  this.last_name,  this.email,   this.password,  this.phone});
 
@@ -24,4 +24,5 @@ class User {
     'password': password,
     'phone': phone,
   };
+  
 }

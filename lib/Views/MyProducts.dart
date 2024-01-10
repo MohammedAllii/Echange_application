@@ -6,9 +6,9 @@ import '../Services/ApiClient.dart';
 import '../Utils/Consts.dart';
 import '../Widgets/MenuBar.dart';
 import 'AddProductScreen.dart';
+import 'CombinedOfferProductList.dart';
 import 'EditProductScreen.dart';
 import 'ProductDescription.dart';
-import 'OfferList.dart';
 import 'package:flutter_simple_page/Models/Categorie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -77,89 +77,153 @@ Widget _buildProductItem(Product product) {
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          PopupMenuButton<int>(
-            itemBuilder: (context) => [
-              PopupMenuItem<int>(
-                value: 0,
-                child: Row(
-                  children: [
-                    Icon(Icons.edit),
-                    SizedBox(width: 8),
-                    Text('Edit'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<int>(
-                value: 1,
-                child: Row(
-                  children: [
-                    Icon(Icons.delete),
-                    SizedBox(width: 8),
-                    Text('Delete'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<int>(
-                value: 2,
-                child: Row(
-                  children: [
-                    Icon(Icons.local_offer),
-                    SizedBox(width: 8),
-                    Text('Offres'),
-                  ],
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            product.nomProduit,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              PopupMenuButton<int>(
+                                itemBuilder: (context) => [
+                                  PopupMenuItem<int>(
+                                    value: 0,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.edit),
+                                        SizedBox(width: 8),
+                                        Text('Edit'),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<int>(
+                                    value: 1,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete),
+                                        SizedBox(width: 8),
+                                        Text('Delete'),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                onSelected: (int index) {
+                                  _handleButtonAction(index, product);
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        _truncateDescription(product.description),
+                        maxLines: 5,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${product.added}',
+                            style: TextStyle(
+                              color: Colors.red,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                'Offres', // Add your desired text here
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue, // Customize the color as needed
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.local_offer),
+                                onPressed: () {
+                                  
+                                  _navigateTooffreScreen(product!.id.toString());
+                                },
+                              ),
+                              Text(
+                                'Reset',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                                  IconButton(
+                                    icon: Icon(Icons.refresh),
+                                    onPressed: () async {
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return AlertDialog(
+                                            title: Text('Vous êtes sûrs ?'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  Navigator.pop(context); 
+                                                },
+                                                child: Text('Annuler'),
+                                              ),
+                                              TextButton(
+                                                onPressed: () async {
+                                                  
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(
+                                                      content: Text('réinitialiser'),
+                                                      duration: Duration(seconds: 3),
+                                                    ),
+                                                  );
+                                                  Navigator.pop(context);
+                                                  await ApiClient.resetProduct(product.id);
+                                                },
+                                                child: Text('Confirmer'),
+                                              ),
+                                            ],
+                                          );
+                                        },
+                                      );
+                                    },
+                                  ),
+
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
-            onSelected: (int index) {
-              _handleButtonAction(index, product);
-            },
           ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.nomProduit,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      _truncateDescription(product.description),
-                      maxLines: 5,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    Divider(),
-                    Text(
-                  '${product.added}',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: Colors.red,
-                  ),
-                ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-          )
         ],
       ),
     ),
   );
 }
+
 
   void _handleButtonAction(int index, Product product) {
   switch (index) {
@@ -169,10 +233,6 @@ Widget _buildProductItem(Product product) {
       break;
     case 1:
       _showDeleteConfirmation(context, product);
-      break;
-    case 2:
-      _navigateTooffreScreen(product.id.toString());
-      // Handle Offres button click
       break;
     default:
       // Handle Edit button click
@@ -192,7 +252,7 @@ void _navigateTooffreScreen(String productid) {
   Navigator.push(
     context,
     MaterialPageRoute(
-      builder: (context) => OfferList(idProduit: productid),
+      builder: (context) => CombinedOfferProductList(idProduit: productid),
     ),
   );
 }
@@ -336,16 +396,6 @@ void _navigateTooffreScreen(String productid) {
           });
         },
         items: Consts.navBarItems,
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => AddProductScreen()),
-          );
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.blue,
       ),
     );
   }

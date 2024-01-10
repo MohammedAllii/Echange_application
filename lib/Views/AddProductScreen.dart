@@ -12,6 +12,12 @@ import '../Utils/size_config.dart';
 import '../Views/HomeScreen.dart';
 
 class AddProductScreen extends StatefulWidget {
+  final List<Categorie>? categoriessends;
+  final File? imageselected;
+
+  AddProductScreen({Key? key, this.categoriessends, this.imageselected})
+      : super(key: key);
+
   @override
   _AddProductScreenState createState() => _AddProductScreenState();
 }
@@ -21,17 +27,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
   TextEditingController _descriptionController = TextEditingController();
   int? _selectedCategoryId;
   int _selectedIndex = 2;
-  
+
   List<Categorie> _categories = [];
   List<File> _selectedImages = [];
-  
 
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    _fetchCategories();
+    if (widget.categoriessends == null) {
+      _fetchCategories();
+    } else {
+      setState(() {
+        _categories = widget.categoriessends!;
+      });
+    }
+    if (widget.imageselected != null) {
+      setState(() {
+        _selectedImages.addAll([widget.imageselected!]);
+      });
+    }
   }
 
   Future<void> _fetchCategories() async {
@@ -69,17 +85,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
         elevation: 0.0,
         centerTitle: true,
         leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: Color(0xFF545D68)),
-        onPressed: () {
-          // Navigate directly to HomeScreen
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (context) => HomeScreen()),
-            (route) => false, // Remove all previous routes from the stack
-          );
-        },
-      ),
-
+          icon: Icon(Icons.arrow_back, color: Color(0xFF545D68)),
+          onPressed: () {
+            // Navigate directly to HomeScreen
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+              (route) => false, // Remove all previous routes from the stack
+            );
+          },
+        ),
         title: Text(
           "Add Product",
           style: TextStyle(
@@ -178,6 +193,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               ),
                             );
                           } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(
+                                 content: Text('Moving to api'),
+                                  duration: Duration(seconds: 3),
+                              ),
+                            );
                             await _addProduct();
                           }
                         }
@@ -236,6 +257,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 10),
       child: DropdownButtonFormField<int>(
+        key: Key('categoryDropdown'),
         value: _selectedCategoryId,
         items: _categories.map((categorie) {
           return DropdownMenuItem<int>(

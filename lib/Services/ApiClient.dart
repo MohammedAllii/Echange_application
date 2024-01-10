@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter_simple_page/Models/User.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../Models/Categorie.dart';
 import '../Models/Offer.dart';
 import '../Models/Product.dart';
@@ -26,7 +25,7 @@ class ApiClient {
     return response;
   }
 
-  static Future<http.Response> registerUser(String name, String email, String password) async {
+  static Future<http.Response> registerUser(String name, String email, String password,String phone) async {
     final response = await http.post(
       Uri.parse('$baseUrl/users/register'),
       headers: <String, String>{
@@ -35,6 +34,7 @@ class ApiClient {
       body: jsonEncode({
         'name': name,
         "email": email,
+        "phone": phone,
         "password": password,
       }),
     );
@@ -111,21 +111,26 @@ class ApiClient {
   }
 
   static Future<List<Product>> getProductsByCategory(int categoryId) async {
+  // Retrieve userid from SharedPreferences
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String userId = prefs.getString('id') ?? '0';
+
   final response = await http.get(
-      Uri.parse('$baseUrl/productsCategorie/$categoryId'),
-    );
+    Uri.parse('$baseUrl/productsCategorie/$userId/$categoryId'),
+  );
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> productData = jsonDecode(response.body);
-      final List<Product> products = (productData['produits'] as List<dynamic>)
-          .map((data) => Product.fromJson(data))
-          .toList();
+  if (response.statusCode == 200) {
+    final Map<String, dynamic> productData = jsonDecode(response.body);
+    final List<Product> products = (productData['produits'] as List<dynamic>)
+        .map((data) => Product.fromJson(data))
+        .toList();
 
-      return products;
-    } else {
-      throw Exception('Failed to load products');
-    }
+    return products;
+  } else {
+    throw Exception('Failed to load products');
   }
+}
+
 
  static Future<void> deleteUserProduct(int idProduit) async {
   try {
@@ -230,6 +235,34 @@ static Future<http.Response> updateProduit({
     // Handle exception
     print('Error updating product: $e');
     return http.Response('Error updating product', 500);
+  }
+}
+
+static Future<http.Response> updatePhone({
+  required int userId,
+  required String phone,
+}) async {
+  try {
+    // API endpoint for updating a product
+    Uri uri = Uri.parse('$baseUrl/userUpdate/$userId');
+
+    // Prepare the request body
+    Map<String, dynamic> requestBody = {
+      'phone': phone,
+    };
+
+    // Make the PUT request without including the token in headers
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
+
+    return response;
+  } catch (e) {
+    // Handle exception
+    print('Error updating phone: $e');
+    return http.Response('Error updating phone', 500);
   }
 }
 
@@ -438,6 +471,119 @@ static Future<List<Offer>> getOffersForProduct(String idProduit) async {
       throw Exception('Failed to load products for offer');
     }
   }
+  //offres users
+  static Future<List<Offer>> getProductsForUser(String userid) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/offers-users/$userid'),
+      );
 
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        final List<dynamic> offersData = responseData['offers'];
 
+        List<Offer> offers = offersData
+            .map((offerData) => Offer.fromJson(offerData))
+            .toList();
+
+        return offers;
+      } else {
+        throw Exception('Failed to load offers');
+      }
+    } catch (e) {
+      print('Error fetching offers: $e');
+      throw Exception('Failed to load offers');
+    }
+  }
+ //add offre
+static Future<Map<String, dynamic>> addOffer(String userId, int productcibleId, List<String> productIds) async {
+  try {
+    final String joinedProductIds = productIds.join(',');
+    final response = await http.post(
+      Uri.parse('$baseUrl/ajouter-offre/$userId/$productcibleId'), 
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'product_ids': joinedProductIds}),
+    );
+
+    if (response.statusCode == 201) {
+      print(response.body);
+      return json.decode(response.body);
+     
+    } else if (response.statusCode == 401) {
+      return {'error': 'Offre already exists'};
+    } else {
+      return {'error': 'Failed to add offer'};
+    }
+  } catch (e) {
+    return {'error': 'Failed to connect to the server'};
+  }
+}
+
+ static Future<http.Response> acceptOffer(String token, String offerId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/accept-offer/$offerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return response;
+    } catch (e) {
+      print('Error accepting offer: $e');
+      return http.Response('Error accepting offer', 500);
+    }
+  }
+
+  static Future<http.Response> declineOffer(String token, String offerId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/decline-offer/$offerId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return response;
+    } catch (e) {
+      print('Error declining offer: $e');
+      return http.Response('Error declining offer', 500);
+    }
+  }
+   static Future<User> fetchcontact(String iduser) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/user-details/$iduser'),
+      headers: {
+         'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final userProfileMap = jsonDecode(response.body);
+      final userProfile = User.fromJson(userProfileMap);
+      return userProfile;
+    } else {
+      throw Exception('Failed to load User');
+    }
+  }
+  //Reset produit
+  static Future<void> resetProduct(int idProduit) async {
+  try {
+    final response = await http.post(
+      Uri.parse('$baseUrl/productReset/$idProduit'),
+    );
+
+    if (response.statusCode == 201) {
+      print('Product reseted successfully');
+    } else {
+      throw Exception('Failed to reset s product');
+    }
+  } catch (e) {
+    throw Exception('Failed to reset sss product');
+  }
+}
 }

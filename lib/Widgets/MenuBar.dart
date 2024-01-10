@@ -65,6 +65,14 @@ class MenuBar extends StatelessWidget {
         selected: selectedIndex == 2,
       ),
       ListTile(
+        leading: Icon(Icons.add),
+        title: Text('Add produit'),
+        onTap: () {
+          Consts.onItemTapped(context, 7);
+        },
+        selected: selectedIndex == 7,
+      ),
+      ListTile(
   leading: Icon(Icons.logout_sharp),
   title: Text('Deconnection'),
   onTap: () async {

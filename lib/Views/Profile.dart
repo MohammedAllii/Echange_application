@@ -1,10 +1,119 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import '../Utils/Consts.dart';
 import 'HomeScreen.dart';
+import '../Services/ApiClient.dart'; // Import your ApiClient class
 
-class Profile extends StatelessWidget {
+class Profile extends StatefulWidget {
   const Profile({Key? key}) : super(key: key);
+
+  @override
+  _ProfileState createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  String _userName = '';
+  String _userEmail = '';
+  String _userPhone = '';
+  int? _userId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    var userName = prefs.getString('name');
+    var userEmail = prefs.getString('email');
+    var userId = prefs.getString('id');
+    var userPhone = prefs.getString('phone');
+
+    _userId = userId != null ? int.tryParse(userId) : null;
+
+    if (userName != null) {
+      setState(() {
+        _userName = userName;
+      });
+    }
+    if (userEmail != null) {
+      setState(() {
+        _userEmail = userEmail;
+      });
+    }
+    if (userPhone != null) {
+      setState(() {
+        _userPhone = userPhone;
+      });
+    }
+  }
+
+  void _showEditDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        TextEditingController controller = TextEditingController(text: _userPhone);
+
+        String? newPhoneNumber;
+        return AlertDialog(
+          title: Text("Edit Phone Number"),
+          content: TextField(
+            controller: controller,
+            onChanged: (value) {
+              newPhoneNumber = value;
+            },
+            decoration: InputDecoration(
+              hintText: "Enter new phone number",
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (newPhoneNumber != null && _userId != null) {
+                  final response = await ApiClient.updatePhone(
+                    userId: _userId!,
+                    phone: newPhoneNumber!,
+                  );
+
+                  if (response.statusCode == 200) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Phone updated Successfully"),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                    setState(() {
+                      _userPhone = newPhoneNumber!;
+                    });
+                    // Update the phone number in shared preferences
+                    final SharedPreferences prefs = await SharedPreferences.getInstance();
+                    prefs.setString('phone', newPhoneNumber!);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Error updating phone."),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                }
+                Navigator.pop(context);
+              },
+              child: Text("Update"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,21 +132,21 @@ class Profile extends StatelessWidget {
       ),
       body: Column(
         children: [
-          const Expanded(flex: 2, child: _TopPortion()),
+Expanded(flex: 2, child: _TopPortion(onEditPressed: _showEditDialog)),
           Expanded(
             flex: 3,
             child: Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Column(
+              child: Table(
+                columnWidths: {
+                  0: FlexColumnWidth(2),
+                  1: FlexColumnWidth(5),
+                },
                 children: [
-                  Text(
-                    "Richie Lorie",
-                    style: Theme.of(context)
-                        .textTheme
-                        .headline6
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const _ProfileInfoRow()
+                  _buildTableRow("Name", _userName, false),
+                  _buildTableRow("Email", _userEmail, false),
+                  _buildTableRow("Phone", _userPhone, true),
+                  
                 ],
               ),
             ),
@@ -55,66 +164,34 @@ class Profile extends StatelessWidget {
       ),
     );
   }
-}
 
-class _ProfileInfoRow extends StatelessWidget {
-  const _ProfileInfoRow({Key? key}) : super(key: key);
-
-  final List<ProfileInfoItem> _items = const [
-    ProfileInfoItem("Posts", 900),
-    ProfileInfoItem("Followers", 120),
-    ProfileInfoItem("Following", 200),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 80,
-      constraints: const BoxConstraints(maxWidth: 400),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: _items
-            .map((item) => Expanded(
-                    child: Row(
-                  children: [
-                    if (_items.indexOf(item) != 0) const VerticalDivider(),
-                    Expanded(child: _singleItem(context, item)),
-                  ],
-                )))
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _singleItem(BuildContext context, ProfileInfoItem item) => Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              item.value.toString(),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
+  TableRow _buildTableRow(String attribute, String value, bool isLastRow) {
+  return TableRow(
+    children: [
+      isLastRow
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: IconButton(
+                onPressed: _showEditDialog,
+                icon: Icon(Icons.edit),
+                iconSize: 24,
               ),
-            ),
-          ),
-          Text(
-            item.title,
-            style: Theme.of(context).textTheme.caption,
-          )
-        ],
-      );
+            )
+          : SizedBox.shrink(), // Hide IconButton for non-last rows
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Text("$attribute: $value"),
+      ),
+    ],
+  );
 }
 
-class ProfileInfoItem {
-  final String title;
-  final int value;
-  const ProfileInfoItem(this.title, this.value);
 }
 
 class _TopPortion extends StatelessWidget {
-  const _TopPortion({Key? key}) : super(key: key);
+  final VoidCallback onEditPressed;
+
+  const _TopPortion({Key? key, required this.onEditPressed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -141,7 +218,7 @@ class _TopPortion extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-              Container(
+                Container(
                   decoration: const BoxDecoration(
                     color: Colors.black,
                     shape: BoxShape.circle,

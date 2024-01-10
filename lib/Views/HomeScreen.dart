@@ -286,7 +286,8 @@ Widget _buildCategoryCarousel() {
     aspectRatio: 6 / 2,
   ),
   items: [
-    Image.asset('assets/image1.jpg', fit: BoxFit.cover),
+    Image.asset('assets/image22.jpg', fit: BoxFit.cover),
+    Image.asset('assets/image1.png', fit: BoxFit.cover),
     Image.asset('assets/image2.jpg', fit: BoxFit.cover),
   ].map((Widget image) {
     return ClipRRect(
@@ -381,14 +382,6 @@ Container(
                       ),
                     ),
                     Spacer(),
-                    SizedBox(width: 10),
-                    TextButton(
-                      onPressed: null, // Set onPressed to null for no functionality
-                      child: Text(
-                        "Voir tout",
-                        style: TextStyle(color: Colors.blue),
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -433,13 +426,6 @@ Container(
                     ),
                     Spacer(),
                     SizedBox(width: 10),
-                    TextButton(
-                      onPressed: null,
-                      child: Text(
-                        "Voir tout",
-                        style: TextStyle(color: Colors.blue),
-                      ),
-                    ),
                   ],
                 ),
               ),

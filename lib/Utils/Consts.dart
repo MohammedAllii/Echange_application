@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Services/ApiClient.dart';
 import '../Views/AddProductScreen.dart';
+import '../Views/ListOffersUser.dart';
 import '../Views/Profile.dart';
 import '../Views/HomeScreen.dart';
 import '../Views/MyProducts.dart';
@@ -31,8 +32,8 @@ class Consts {
     selectedColor: Color.fromARGB(255, 102, 138, 217),
   ),
   SalomonBottomBarItem(
-    icon: const Icon(Icons.my_library_add_rounded),
-    title: const Text("add produit"),
+    icon: const Icon(Icons.list),
+    title: const Text("Mes Offres"),
     selectedColor: Color.fromARGB(255, 233, 175, 27),
   ),
    SalomonBottomBarItem(
@@ -59,13 +60,19 @@ class Consts {
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => AddProductScreen()),
+          MaterialPageRoute(builder: (context) => ListOffersUser()),
         );
         break;
         case 3:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Profile()),
+        );
+        break;
+        case 7:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => AddProductScreen()),
         );
         break;
     }

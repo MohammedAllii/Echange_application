@@ -6,7 +6,7 @@ class Product {
   final String added;
   final int? categorieId; // Make it nullable
 
-  // ... Other properties and methods
+
 
   Product({
     required this.id,
